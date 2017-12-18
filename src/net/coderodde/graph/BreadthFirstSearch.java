@@ -19,6 +19,49 @@ import java.util.Objects;
 public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
 
     /**
+     * This interface implements the node listener.
+     * 
+     * @param <N> the graph node type.
+     */
+    public interface NodeListener<N> {
+        
+        /**
+         * Called right before starting to expand the nodes.
+         * 
+         * @param sourceNode the source node.
+         */
+        public void onBeginSearch(N sourceNode);
+        
+        /**
+         * Called when {@code node} is reached by the search for the first time.
+         * 
+         * @param node the reached node.
+         */
+        public void onReach(N node);
+        
+        /**
+         * Called when {@code node} is removed from the search frontier and is
+         * expanded.
+         * 
+         * @param node the expanded node.
+         */
+        public void onExpand(N node);
+        
+        /**
+         * Called right after the graph search reaches the target node.
+         * 
+         * @param targetNode the target node.
+         */
+        public void onEndSearchSuccess(N targetNode);
+        
+        /**
+         * Called right after the graph search decides that the target node is
+         * not reachable.
+         */
+        public void onEndSearchFailure();
+    }
+    
+    /**
      * Initiates the path search.
      * 
      * @param <N> the graph node type.
@@ -94,15 +137,18 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
 
         private static final int DEFAULT_NUMBER_OF_EXPANSIONS_PER_ITERATION = 1;
 
+        private final N sourceNode;
         private final N targetNode;
         private int expansionsPerIteration = 
                 DEFAULT_NUMBER_OF_EXPANSIONS_PER_ITERATION;
 
-        private State state = State.RUNNING;
+        private State state = null;
         private final Deque<N> queue = new ArrayDeque<>();
         private final Map<N, N> parents = new HashMap<>();
+        private final List<NodeListener<N>> nodeListeners = new ArrayList<>();
 
         SearchState(N sourceNode, N targetNode) {
+            this.sourceNode = sourceNode;
             this.targetNode = targetNode;
             this.queue.addLast(sourceNode);
             this.parents.put(sourceNode, null);
@@ -119,11 +165,24 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
             this.expansionsPerIteration = Math.max(1, expansions);
             return this;
         }
+        
+        public SearchState<N> addNodeListener(NodeListener<N> listener) {
+            nodeListeners.add(
+                    Objects.requireNonNull(
+                            listener, 
+                            "The input listener is null."));
+            return this;
+        }
 
         /**
          * Performs a single iteration.
          */
         public void iterate() {
+            if (state == null) {
+                onBeginSearch(sourceNode);
+                state = State.RUNNING;
+            }
+            
             if (isSearchComplete()) {
                 return;
             }
@@ -131,19 +190,23 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
             for (int i = 0; i < expansionsPerIteration; ++i) {
                 if (queue.isEmpty()) {
                     state = State.NO_PATH;
+                    onEndSearchFailure(targetNode);
                     return;
                 }
 
                 N currentNode = queue.removeFirst();
-
+                onExpand(currentNode);
+                
                 if (currentNode.equals(targetNode)) {
                     state = State.FOUND_PATH;
+                    onEndSearchSuccess(targetNode);
                     return;
                 }
 
                 for (N childNode : currentNode.getChildren()) {
                     if (!parents.containsKey(childNode)) {
                         // We came to childNode from currentNode:
+                        onReach(childNode);
                         parents.put(childNode, currentNode); 
                         queue.addLast(childNode);
                     }
@@ -185,7 +248,7 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
         }
 
         public boolean isSearchComplete() {
-            return state != State.RUNNING;
+            return state != null && state != State.RUNNING;
         }
 
         public List<N> getShortestPath() {
@@ -218,6 +281,36 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
 
             Collections.<N>reverse(path);
             return path;
+        }
+        
+        private void onBeginSearch(N sourceNode) {
+            for (NodeListener<N> nodeListener : nodeListeners) {
+                nodeListener.onBeginSearch(sourceNode);
+            }
+        }
+        
+        private void onReach(N node) {
+            for (NodeListener<N> nodeListener : nodeListeners) {
+                nodeListener.onReach(node);
+            }
+        }
+        
+        private void onExpand(N node) {
+            for (NodeListener<N> nodeListener : nodeListeners) {
+                nodeListener.onExpand(node);
+            }
+        }
+        
+        private void onEndSearchSuccess(N targetNode) {
+            for (NodeListener<N> nodeListener : nodeListeners) {
+                nodeListener.onEndSearchSuccess(targetNode);
+            }
+        }
+        
+        private void onEndSearchFailure(N targetNode) {
+            for (NodeListener<N> nodeListener : nodeListeners) {
+                nodeListener.onEndSearchFailure();
+            }
         }
     }
 }

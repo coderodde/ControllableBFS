@@ -10,12 +10,12 @@ public class BreadthFirstSearchTest {
     
     @Test
     public void test() {
-        DirectedGraphNode a  = new DirectedGraphNode();
-        DirectedGraphNode b  = new DirectedGraphNode();
-        DirectedGraphNode c1 = new DirectedGraphNode();
-        DirectedGraphNode c2 = new DirectedGraphNode();
-        DirectedGraphNode d  = new DirectedGraphNode();
-        DirectedGraphNode e  = new DirectedGraphNode();
+        DirectedGraphNode a  = new DirectedGraphNode(0);
+        DirectedGraphNode b  = new DirectedGraphNode(1);
+        DirectedGraphNode c1 = new DirectedGraphNode(2);
+        DirectedGraphNode c2 = new DirectedGraphNode(3);
+        DirectedGraphNode d  = new DirectedGraphNode(4);
+        DirectedGraphNode e  = new DirectedGraphNode(5);
         
         a.addChild(b);
         b.addChild(c1);
@@ -24,10 +24,70 @@ public class BreadthFirstSearchTest {
         d.addChild(e);
         c2.addChild(e);
         
+        BreadthFirstSearch.NodeListener<DirectedGraphNode> listener1 =
+        new BreadthFirstSearch.NodeListener<DirectedGraphNode>() {
+            
+            @Override
+            public void onBeginSearch(DirectedGraphNode sourceNode) {
+                
+            }
+
+            @Override
+            public void onReach(DirectedGraphNode node) {
+                System.out.println("1.onReach: " + node);
+            }
+
+            @Override
+            public void onExpand(DirectedGraphNode node) {
+                System.out.println("1.onExpand: " + node);
+            }
+
+            @Override
+            public void onEndSearchSuccess(DirectedGraphNode targetNode) {
+                System.out.println("1.onEndSearchSuccess: " + targetNode);
+            }
+
+            @Override
+            public void onEndSearchFailure() {
+                
+            }
+        };
+        
+        BreadthFirstSearch.NodeListener<DirectedGraphNode> listener2 =
+        new BreadthFirstSearch.NodeListener<DirectedGraphNode>() {
+            
+            @Override
+            public void onBeginSearch(DirectedGraphNode sourceNode) {
+                System.out.println("2.onBeginSearch: " + sourceNode);
+            }
+
+            @Override
+            public void onReach(DirectedGraphNode node) {
+                
+            }
+
+            @Override
+            public void onExpand(DirectedGraphNode node) {
+                
+            }
+
+            @Override
+            public void onEndSearchSuccess(DirectedGraphNode targetNode) {
+                System.out.println("2.onEndSearchSuccess: " + targetNode);
+            }
+
+            @Override
+            public void onEndSearchFailure() {
+                System.out.println("2.onEndSearchFailure: ");
+            }
+        };
+        
         BreadthFirstSearch.SearchState<DirectedGraphNode> bfs = 
                 BreadthFirstSearch.<DirectedGraphNode>findShortestPath()
                                   .from(a)
-                                  .to(e);
+                                  .to(e)
+                                  .addNodeListener(listener1)
+                                  .addNodeListener(listener2);
         
         bfs.search();
         
