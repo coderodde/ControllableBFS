@@ -57,8 +57,10 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
         /**
          * Called right after the graph search decides that the target node is
          * not reachable.
+         * 
+         * @param targetNode the target node.
          */
-        public void onEndSearchFailure();
+        public void onEndSearchFailure(N targetNode);
     }
     
     /**
@@ -309,7 +311,7 @@ public final class BreadthFirstSearch<N extends ChildNodeExpander<N>> {
         
         private void onEndSearchFailure(N targetNode) {
             for (NodeListener<N> nodeListener : nodeListeners) {
-                nodeListener.onEndSearchFailure();
+                nodeListener.onEndSearchFailure(targetNode);
             }
         }
     }

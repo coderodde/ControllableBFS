@@ -48,8 +48,8 @@ public class BreadthFirstSearchTest {
             }
 
             @Override
-            public void onEndSearchFailure() {
-                
+            public void onEndSearchFailure(DirectedGraphNode targetNode) {
+                System.out.println("1.onEndSearchFailure: " + targetNode);
             }
         };
         
@@ -77,8 +77,8 @@ public class BreadthFirstSearchTest {
             }
 
             @Override
-            public void onEndSearchFailure() {
-                System.out.println("2.onEndSearchFailure: ");
+            public void onEndSearchFailure(DirectedGraphNode targetNode) {
+                System.out.println("2.onEndSearchFailure: " + targetNode);
             }
         };
         
